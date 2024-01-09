@@ -10,13 +10,27 @@ const char *serverIP = "192.168.0.100";
 
 const int buzzerPin = 4;   
 const int relayPin = 5;    
+const int ledPinOn = 26;
+const int ledPinOff = 25; 
+
+const int switchOnPin = 14;  // GPIO pin for the ON switch
+const int switchOffPin = 12; // GPIO pin for the OFF switch
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+bool systemEnabled = false;
+
 
 void setup() {
   Serial.begin(115200);
   connectToWiFi();
   pinMode(buzzerPin, OUTPUT);
   pinMode(relayPin, OUTPUT);
+  pinMode(ledPinOn, OUTPUT);
+  pinMode(ledPinOff, OUTPUT);
+  pinMode(switchOnPin, INPUT);   // Set switchOnPin as input with internal pull-up resistor
+  pinMode(switchOffPin, INPUT);  // Set switchOffPin as input with internal pull-up resistor
+    
+  
    // initialize LCD
   lcd.init();
   // turn on LCD backlight
@@ -29,7 +43,38 @@ void setup() {
 }
 
 void loop() {
-  getDataFromServer();
+Serial.println(touchRead(27));
+
+  if((touchRead(27))<55){
+      digitalWrite(buzzerPin, HIGH);
+      digitalWrite(relayPin, HIGH);  
+      digitalWrite(ledPinOn, HIGH); // Turn on the LED
+      digitalWrite(ledPinOff, LOW); // Turn off the LED
+
+      delay(500); 
+            digitalWrite(buzzerPin, LOW); 
+        Serial.println("Touch Reading");
+ 
+
+  }if((touchRead(27))<40){
+      digitalWrite(buzzerPin, LOW);
+      digitalWrite(relayPin, LOW);  
+      digitalWrite(ledPinOn, LOW); // Turn on the LED
+      digitalWrite(ledPinOff, LOW); // Turn off the LED
+
+      delay(500); 
+            digitalWrite(buzzerPin, LOW); 
+        Serial.println("Touch Reading");
+ 
+
+  }
+  
+  else{
+      getDataFromServer();
+  }
+
+  // Check the state of the ON switch
+ 
   delay(5000);
 }
 
@@ -74,10 +119,12 @@ void getDataFromServer() {
 
     if (distanceInch < 12.0) {
       Serial.println("Distance is outside the acceptable range. Triggering buzzer and relay!");
-      digitalWrite(buzzerPin, HIGH);
       delay(500); 
       digitalWrite(buzzerPin, LOW);
       digitalWrite(relayPin, LOW);  
+      digitalWrite(ledPinOff, HIGH); // Turn off the LED
+            digitalWrite(ledPinOn, LOW); // Turn on the LED
+
       lcd.clear();
    lcd.setCursor(0, 0);
   lcd.print("Water Lev");
@@ -85,12 +132,17 @@ void getDataFromServer() {
   lcd.print("%");
   lcd.setCursor(0, 1);
   lcd.print("Pump Turn off...");
+    digitalWrite(ledPinOff, HIGH);
     }else if ( distanceInch > 45.0) {
       Serial.println("Distance is outside the acceptable range. Triggering buzzer and relay!");
       digitalWrite(buzzerPin, HIGH);
       digitalWrite(relayPin, HIGH);  
+      digitalWrite(ledPinOn, HIGH); // Turn on the LED
+      digitalWrite(ledPinOff, LOW); // Turn off the LED
+
       delay(500); 
-      digitalWrite(buzzerPin, LOW);
+            digitalWrite(buzzerPin, LOW);
+
       lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Water Lev");
